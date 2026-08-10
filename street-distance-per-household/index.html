@@ -69,6 +69,15 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
 </head>
 <body>
+<script src="/header.js"></script>
+<style>
+  /* Folium renders a full-viewport map; make room for the shared header. */
+  html, body { height: 100%; margin: 0; }
+  body { display: flex; flex-direction: column; }
+  /* Folium sets height on an ID selector, so !important is what wins here. */
+  .folium-map { flex: 1 1 auto; height: auto !important; min-height: 0; }
+</style>
+
     
     
             <div class="folium-map" id="map_0da474f4674ee1fce9be7f9876526529" ></div>
