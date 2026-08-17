@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
 
+Sitemap: https://malcolmkennedy.com/sitemap.xml
 Sitemap: https://malcolmkennedy.com/to-multiplex-map/sitemap.xml

@@ -3,8 +3,44 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Malcolm Kennedy</title>
-<meta name="description" content="Maps and data visualizations by Malcolm Kennedy.">
+<title>Malcolm Kennedy &mdash; Toronto Maps &amp; Data Visualization</title>
+<meta name="description" content="Malcolm Kennedy is a Toronto-based data professional who builds maps and data visualizations about how the city is changing — housing, streets, and transit — from City of Toronto open data.">
+<link rel="canonical" href="https://malcolmkennedy.com/">
+
+<meta property="og:type" content="profile">
+<meta property="og:url" content="https://malcolmkennedy.com/">
+<meta property="og:title" content="Malcolm Kennedy &mdash; Toronto Maps &amp; Data Visualization">
+<meta property="og:description" content="Maps and data visualizations about how Toronto is changing — housing, streets, and transit — from City of Toronto open data.">
+<meta property="og:image" content="https://malcolmkennedy.com/multiplex-map/thumb.jpg">
+<meta name="twitter:card" content="summary_large_image">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "@id": "https://malcolmkennedy.com/#malcolm-kennedy",
+  "name": "Malcolm Kennedy",
+  "url": "https://malcolmkennedy.com/",
+  "jobTitle": "Data Professional",
+  "description": "Builds maps and data visualizations about Toronto — housing, streets, and transit — from City of Toronto open data.",
+  "homeLocation": {
+    "@type": "Place",
+    "name": "Toronto, Ontario, Canada"
+  },
+  "knowsAbout": [
+    "Toronto housing",
+    "urban planning",
+    "geospatial data",
+    "data visualization",
+    "open data"
+  ],
+  "sameAs": [
+    "https://github.com/zuzubak",
+    "https://www.linkedin.com/in/malcolm-kennedy-817777118/",
+    "https://www.instagram.com/t.o.and.fro/"
+  ]
+}
+</script>
 <style>
   :root {
     --bg: #ffffff;
@@ -51,6 +87,24 @@
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 32px;
   }
+
+  .intro {
+    max-width: 62ch;
+    margin: 0 0 44px;
+  }
+  .intro h1 {
+    margin: 0 0 10px;
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+  .intro p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  .intro a { color: inherit; }
 
   .tile { text-decoration: none; color: inherit; display: block; }
   .tile .thumb {
@@ -100,6 +154,16 @@
 
 
 <main>
+  <div class="intro">
+    <h1>Malcolm Kennedy</h1>
+    <p>
+      I'm a Toronto-based data professional. I build maps and data visualizations about how
+      the city is changing &mdash; housing, streets, and transit &mdash; mostly from
+      City of Toronto open data. Everything here is built from public sources, and the
+      code behind each project is on <a href="https://github.com/zuzubak">GitHub</a>.
+    </p>
+  </div>
+
   <div class="grid">
 
     <!-- TILE: copy this block for each new map. Change href, img src, title, blurb. -->
