@@ -9,4 +9,8 @@
     <loc>https://malcolmkennedy.com/street-distance-per-household/</loc>
     <changefreq>yearly</changefreq>
   </url>
+  <url>
+    <loc>https://malcolmkennedy.com/transit-driving/</loc>
+    <changefreq>yearly</changefreq>
+  </url>
 </urlset>
