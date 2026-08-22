@@ -20,7 +20,7 @@
     --highlight:      #0b0b0b;
     --shadow:         0 1px 2px rgba(11,11,11,.06), 0 8px 28px rgba(11,11,11,.12);
 
-    /* Sequential: one hue, light -> dark. Palette blue, steps 100..700. */
+    /* Shared by both themes. Sequential: one hue, light -> dark, palette blue. */
     --seq-1: #cde2fb; --seq-2: #9ec5f4; --seq-3: #6da7ec; --seq-4: #3987e5;
     --seq-5: #256abf; --seq-6: #184f95; --seq-7: #0d366b;
 
@@ -31,8 +31,8 @@
     --div-5: #ffbdb7; --div-6: #ff6f69; --div-7: #d2383a; --div-8: #9b0015;
   }
 
-  /* Dark steps are selected, not flipped: sequential recedes toward the dark
-     surface at the low end, and each diverging arm lightens toward its extreme. */
+  /* Dark mode swaps surfaces and ink but keeps the data ramps identical, so the
+     same value reads as the same colour in either theme. */
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       --surface:        #1a1a19;
@@ -45,11 +45,6 @@
       --highlight:      #ffffff;
       --shadow:         0 1px 2px rgba(0,0,0,.4), 0 8px 28px rgba(0,0,0,.55);
 
-      --seq-1: #0d366b; --seq-2: #184f95; --seq-3: #256abf; --seq-4: #3987e5;
-      --seq-5: #6da7ec; --seq-6: #9ec5f4; --seq-7: #cde2fb;
-
-      --div-1: #b7d3f6; --div-2: #6da7ec; --div-3: #2a78d6; --div-4: #184f95;
-      --div-5: #9b0015; --div-6: #d2383a; --div-7: #ff6f69; --div-8: #ffbdb7;
     }
   }
   :root[data-theme="dark"] {
@@ -63,11 +58,6 @@
     --highlight:      #ffffff;
     --shadow:         0 1px 2px rgba(0,0,0,.4), 0 8px 28px rgba(0,0,0,.55);
 
-    --seq-1: #0d366b; --seq-2: #184f95; --seq-3: #256abf; --seq-4: #3987e5;
-    --seq-5: #6da7ec; --seq-6: #9ec5f4; --seq-7: #cde2fb;
-
-    --div-1: #b7d3f6; --div-2: #6da7ec; --div-3: #2a78d6; --div-4: #184f95;
-    --div-5: #9b0015; --div-6: #d2383a; --div-7: #ff6f69; --div-8: #ffbdb7;
   }
 
   * { box-sizing: border-box; }
@@ -95,7 +85,6 @@
     width: 332px;
     max-height: calc(100% - 32px);
     overflow-y: auto;
-    padding: 18px 18px 16px;
     background: var(--panel);
     -webkit-backdrop-filter: blur(14px);
     backdrop-filter: blur(14px);
@@ -103,6 +92,10 @@
     border-radius: 10px;
     box-shadow: var(--shadow);
   }
+
+  .panel-scroll { padding: 18px 18px 16px; }
+  /* The sheet handle is mobile-only; on desktop the panel is a plain card. */
+  .panel-handle-row { display: none; }
 
   h1 {
     margin: 0 0 5px;
@@ -200,13 +193,79 @@
   .leaflet-bar a:hover { background: var(--surface-sunk) !important; }
 
   @media (max-width: 720px) {
+    /* Bottom sheet, dragged by its handle between three snap states. */
     #panel {
-      top: auto; bottom: 0; left: 0;
-      width: 100%;
-      max-height: 62%;
-      border-radius: 12px 12px 0 0;
+      position: fixed;
+      top: auto; bottom: 0; left: 0; right: 0;
+      width: auto;
+      max-height: 42vh;
+      border-radius: 14px 14px 0 0;
       border-left: 0; border-right: 0; border-bottom: 0;
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, .18);
+      transition: max-height 220ms ease;
     }
+
+    /* These vh values are only a pre-JS fallback. On mobile browsers CSS vh is pinned
+       to the largest viewport, as if the address bar were hidden, so a sheet sized in
+       vh overflows the real viewport whenever the bar is showing. The live heights are
+       set inline from window.innerHeight instead. */
+    #panel[data-state="minimized"] { max-height: 52px; }
+    #panel[data-state="expanded"] { max-height: 82vh; }
+    #panel.dragging { transition: none; }
+
+    .panel-handle-row {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      background: var(--panel);
+    }
+
+    .panel-drag-handle {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 0 6px;
+      border: 0;
+      background: none;
+      color: var(--text-secondary);
+      font: inherit;
+      cursor: grab;
+      /* Without this the browser claims the gesture and scrolls the panel instead. */
+      touch-action: none;
+      user-select: none;
+    }
+    .handle-bar { width: 36px; height: 4px; border-radius: 2px; background: var(--hairline); }
+    .handle-label {
+      font-size: 10.5px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    #panel[data-state="minimized"] .handle-label { display: none; }
+    #panel[data-state="expanded"] .handle-label::after { content: " (tap to collapse)"; }
+
+    /* Independent of the drag/tap handling, so there is always a way back to the map. */
+    .panel-hide-btn {
+      flex: none;
+      margin-right: 12px;
+      padding: 5px 10px;
+      border: 1px solid var(--hairline);
+      border-radius: 999px;
+      background: var(--surface-sunk);
+      color: var(--text-secondary);
+      font: inherit;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    #panel[data-state="minimized"] .panel-hide-btn { display: none; }
+    /* Collapse to exactly the handle row, so no stray line of content peeks out. */
+    #panel[data-state="minimized"] .panel-scroll { display: none; }
+
+    .panel-scroll { padding: 4px 18px 24px; }
     .leaflet-control-attribution { display: none; }
   }
 
@@ -221,7 +280,16 @@
 <div id="stage">
   <div id="map"></div>
 
-  <div id="panel">
+  <aside id="panel" data-state="collapsed">
+    <div class="panel-handle-row">
+      <button class="panel-drag-handle" id="panel-toggle" aria-label="Toggle panel" aria-expanded="false">
+        <span class="handle-bar"></span>
+        <span class="handle-label">Legend &amp; views</span>
+      </button>
+      <button class="panel-hide-btn" id="panel-hide" aria-label="Hide panel and show the map">Hide</button>
+    </div>
+
+    <div class="panel-scroll">
     <h1 id="title"></h1>
     <p class="subtitle" id="subtitle"></p>
 
@@ -242,7 +310,8 @@
     <div id="readout"></div>
 
     <footer id="footer"></footer>
-  </div>
+    </div>
+  </aside>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -333,7 +402,14 @@ const CARTO = '&copy; <a href="https://carto.com/attributions">CARTO</a>';
 
 /* Basemap in two pieces so block fills sit between the streets and the place
    labels -- labels stay legible over even the darkest class. */
-map.createPane("blocks").style.zIndex = 350;
+const blocksPane = map.createPane("blocks");
+blocksPane.style.zIndex = 350;
+/* Translucency is applied ONCE to the whole pane rather than per polygon. With a
+   per-polygon fillOpacity, each shared border is rasterised twice and the two
+   antialiased coverages composite darker than either fill -- which is the black
+   webbing between blocks, worst when zoomed out and almost every pixel is an edge
+   pixel. Opaque fills composited as one layer have no seam to darken. */
+blocksPane.style.opacity = 0.85;
 const labelPane = map.createPane("labels");
 labelPane.style.zIndex = 450;
 labelPane.style.pointerEvents = "none";
@@ -358,12 +434,28 @@ drawBasemap();
 
 const renderer = L.canvas({ pane: "blocks", padding: 0.3 });
 
+/* Welding neighbours together is only needed while blocks are near pixel size. Zoomed
+   in, the same weight would visibly fatten each block and paper over the genuine gaps
+   -- ravines, rail corridors, blocks with no routable path -- so it tapers off. */
+function strokeWeightForZoom() {
+  const zoom = map.getZoom();
+  if (zoom <= 11) return 1.5;
+  if (zoom <= 13) return 1.0;
+  return 0.5;
+}
+
 const blocks = DATA.geometry.map((polygons, i) => {
   const rings = polygons.map((polygon) => polygon.map(decodeRing));
   const layer = L.polygon(rings, {
     renderer: renderer,
-    stroke: false,
-    fillOpacity: 0.82,
+    /* A hairline stroke in the fill's own colour closes the sub-pixel slivers left
+       by simplifying each block independently: neighbours no longer round their
+       shared border to identical vertices, so without it the basemap shows through
+       the gap as a bright thread. */
+    stroke: true,
+    weight: strokeWeightForZoom(),
+    color: "#000",
+    fillOpacity: 1,
     fillColor: "#000",
   });
   layer.index = i;
@@ -403,7 +495,9 @@ function repaint() {
   const ramp = ramps[spec.kind];
   const values = DATA[currentMetric];
   for (const layer of blocks) {
-    layer.options.fillColor = ramp[classOf(values[layer.index], spec.edges)];
+    const colour = ramp[classOf(values[layer.index], spec.edges)];
+    layer.options.fillColor = colour;
+    layer.options.color = colour;
   }
   renderer._redraw();
 }
@@ -461,6 +555,15 @@ function renderReadout(index) {
     <p class="verdict">${verdict}</p>`;
 }
 
+let appliedStrokeWeight = strokeWeightForZoom();
+map.on("zoomend", () => {
+  const weight = strokeWeightForZoom();
+  if (weight === appliedStrokeWeight) return;
+  appliedStrokeWeight = weight;
+  for (const layer of blocks) layer.options.weight = weight;
+  renderer._redraw();
+});
+
 /* Interaction ------------------------------------------------------------- */
 
 blockGroup.on("mouseover", (event) => {
@@ -514,6 +617,104 @@ window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () 
   renderLegend();
 });
 
+/* Mobile bottom sheet ----------------------------------------------------- */
+
+/* Dragged by its handle between three snap states: minimized (handle only),
+   collapsed (the default peek), expanded. Dragging down from the default therefore
+   has somewhere smaller to land instead of springing back. Pointer events cover
+   mouse and touch in one API. No-op on desktop, where the panel is a plain card. */
+
+const MOBILE_BREAKPOINT = "(max-width: 720px)";
+const isMobile = () => window.matchMedia(MOBILE_BREAKPOINT).matches;
+
+const panel = document.getElementById("panel");
+const panelToggle = document.getElementById("panel-toggle");
+const panelHide = document.getElementById("panel-hide");
+
+const PANEL_MINIMIZED_PX = 52;
+const PANEL_COLLAPSED_VH = 0.42;
+const PANEL_EXPANDED_VH = 0.82;
+const DRAG_MOVE_THRESHOLD = 6;
+
+function panelTargetHeight(state) {
+  // window.innerHeight is the real visible viewport, unlike CSS vh on mobile.
+  const vh = window.innerHeight;
+  if (state === "minimized") return PANEL_MINIMIZED_PX;
+  if (state === "expanded") return vh * PANEL_EXPANDED_VH;
+  return vh * PANEL_COLLAPSED_VH;
+}
+
+function setPanelState(state) {
+  panel.dataset.state = state;
+  panelToggle.setAttribute("aria-expanded", String(state === "expanded"));
+  // An inline max-height is not scoped by media query, so it would clamp the desktop
+  // card too -- only set it on mobile, and clear it when crossing back.
+  if (isMobile() && !panel.classList.contains("dragging")) {
+    panel.style.maxHeight = `${panelTargetHeight(state)}px`;
+  } else if (!isMobile()) {
+    panel.style.maxHeight = "";
+  }
+  map.invalidateSize();
+}
+
+panelHide.addEventListener("click", () => setPanelState("minimized"));
+
+(function setupPanelDrag() {
+  let dragging = false, startY = 0, startHeight = 0, moved = false, lastHeight = 0;
+
+  panelToggle.addEventListener("pointerdown", (event) => {
+    if (!isMobile()) return;
+    dragging = true;
+    moved = false;
+    startY = event.clientY;
+    startHeight = panel.getBoundingClientRect().height;
+    lastHeight = startHeight;
+    panel.classList.add("dragging");
+    panel.style.maxHeight = "none";
+    try {
+      panelToggle.setPointerCapture(event.pointerId);
+    } catch (err) {
+      // Pointer capture only keeps tracking if the finger slides off the handle;
+      // the drag maths below works without it.
+    }
+  });
+
+  panelToggle.addEventListener("pointermove", (event) => {
+    if (!dragging) return;
+    const deltaY = startY - event.clientY; // positive while dragging upward
+    if (Math.abs(deltaY) > DRAG_MOVE_THRESHOLD) moved = true;
+    const maxHeight = window.innerHeight * PANEL_EXPANDED_VH + 24;
+    lastHeight = Math.min(maxHeight, Math.max(PANEL_MINIMIZED_PX, startHeight + deltaY));
+    panel.style.height = `${lastHeight}px`;
+  });
+
+  function endDrag() {
+    if (!dragging) return;
+    dragging = false;
+    panel.classList.remove("dragging");
+    panel.style.height = "";
+    panel.style.maxHeight = "";
+    if (!moved) return; // a plain tap; the click listener below handles it
+
+    const vh = window.innerHeight;
+    const collapsedPx = vh * PANEL_COLLAPSED_VH;
+    const expandedPx = vh * PANEL_EXPANDED_VH;
+    if (lastHeight < (PANEL_MINIMIZED_PX + collapsedPx) / 2) setPanelState("minimized");
+    else if (lastHeight < (collapsedPx + expandedPx) / 2) setPanelState("collapsed");
+    else setPanelState("expanded");
+  }
+
+  panelToggle.addEventListener("pointerup", endDrag);
+  panelToggle.addEventListener("pointercancel", endDrag);
+
+  // Browsers only fire click when no real drag happened, which is a more reliable
+  // tap signal on touch hardware than a hand-rolled pixel threshold.
+  panelToggle.addEventListener("click", () => {
+    if (!isMobile()) return;
+    setPanelState(panel.dataset.state === "expanded" ? "collapsed" : "expanded");
+  });
+})();
+
 /* Boot -------------------------------------------------------------------- */
 
 document.getElementById("title").textContent = DATA.title;
@@ -526,10 +727,13 @@ document.getElementById("footer").innerHTML =
 repaint();
 renderLegend();
 renderReadout(null);
+setPanelState("collapsed");
 frameCity();
 
 let resizeTimer;
 window.addEventListener("resize", () => {
+  // Also covers the mobile address bar showing/hiding, which changes innerHeight.
+  if (!panel.classList.contains("dragging")) setPanelState(panel.dataset.state);
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(frameCity, 200);
 });
