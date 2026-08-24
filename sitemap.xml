@@ -13,4 +13,8 @@
     <loc>https://malcolmkennedy.com/transit-driving/</loc>
     <changefreq>yearly</changefreq>
   </url>
+  <url>
+    <loc>https://malcolmkennedy.com/commute-by-transit/</loc>
+    <changefreq>yearly</changefreq>
+  </url>
 </urlset>
