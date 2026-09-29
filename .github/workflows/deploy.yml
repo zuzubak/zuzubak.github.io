@@ -1,0 +1,56 @@
+name: Deploy site
+
+# This repo used to deploy with the legacy "pages build and deployment" builder, which
+# serves the branch as-is and so has no opportunity to write config.js from a secret.
+# Building here instead is what lets the CARTO basemap key reach the deployed pages
+# without ever being committed.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # config.js is gitignored, so the deployed copy is written here from the secret.
+      - name: Write basemap config
+        env:
+          CARTO_API_KEY: ${{ secrets.CARTO_API_KEY }}
+        run: |
+          if [ -z "$CARTO_API_KEY" ]; then
+            echo "::warning::CARTO_API_KEY secret is not set; the maps will fall back to the keyless CARTO endpoint, which serves a watermark tile."
+          fi
+          echo "window.CARTO_API_KEY = \"$CARTO_API_KEY\";" > config.js
+
+      - name: Check no page still hardcodes a keyless basemap
+        run: |
+          if grep -rn '{s}\.basemaps\.cartocdn\.com' --include=*.html .; then
+            echo "::error::A page bypasses cartoTileUrl() and will render watermarked tiles."
+            exit 1
+          fi
+          echo "All pages route their basemap through cartoTileUrl()."
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

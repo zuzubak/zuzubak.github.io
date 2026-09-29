@@ -169,6 +169,9 @@
 </head>
 <body>
 <script src="/header.js"></script>
+<script src="/config.js"></script>
+<script src="/carto.js"></script>
+
 
 <div id="stage">
   <div id="map"></div>
@@ -292,9 +295,9 @@ function drawBasemap() {
   const flavour = dark ? "dark" : "light";
   if (baseLayer) map.removeLayer(baseLayer);
   if (labelLayer) map.removeLayer(labelLayer);
-  baseLayer = L.tileLayer(`https://{s}.basemaps.cartocdn.com/${flavour}_nolabels/{z}/{x}/{y}{r}.png`,
+  baseLayer = L.tileLayer(cartoTileUrl(`${flavour}_nolabels`),
     { maxZoom: 18, attribution: `${OSM} ${CARTO}` }).addTo(map);
-  labelLayer = L.tileLayer(`https://{s}.basemaps.cartocdn.com/${flavour}_only_labels/{z}/{x}/{y}{r}.png`,
+  labelLayer = L.tileLayer(cartoTileUrl(`${flavour}_only_labels`),
     { maxZoom: 18, pane: "labels" }).addTo(map);
 }
 drawBasemap();
