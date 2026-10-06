@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The U-curve of native trees: giants and saplings</title>
+<meta name="description" content="Toronto street trees by trunk diameter, split by where their species comes from. Invasives like Norway maples dominate in the middle, while our oldest trees are almost all native.">
+<link rel="canonical" href="https://malcolmkennedy.com/native-u-curve/">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://malcolmkennedy.com/native-u-curve/">
+<meta property="og:title" content="The U-curve of native trees: giants and saplings">
+<meta property="og:description" content="Invasives like Norway maples dominate Toronto's mid-sized street trees, while the oldest trees are almost all native.">
+<meta property="og:image" content="https://malcolmkennedy.com/native-u-curve/thumb.png">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+  /* Origin colours match the street tree map's colour-by-origin key, so the two read as one. */
+  :root {
+    --page: #ffffff;
+    --surface: #fcfcfb;
+    --ink: #111111;
+    --ink-2: #52514e;
+    --muted: #6b6b6b;
+    --grid: #e4e4e4;
+    --axis: #c3c2b7;
+    --border: rgba(11,11,11,0.10);
+    --native: #1baf7a;
+    --ena: #ad3aa2;
+    --introduced: #2a78d6;
+    --invasive: #eb6834;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --page: #111111; --surface: #1b1b1b; --ink: #f2f2f2; --ink-2: #c3c2b7; --muted: #9a9a9a;
+      --grid: #2a2a2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+      --native: #199e70; --ena: #b03da5; --introduced: #3987e5; --invasive: #d95926;
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+  }
+  main { max-width: 900px; margin: 0 auto; padding: 44px 24px 80px; display: grid; gap: 20px; }
+  h1 { font-size: clamp(24px, 4vw, 32px); line-height: 1.2; margin: 0; text-wrap: balance; }
+  .dek { margin: 0; color: var(--ink-2); font-size: 16px; max-width: 66ch; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--ink-2); margin-top: 8px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .sw { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+  .chart { position: relative; }
+  .chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .chart text { font-family: inherit; }
+  .tick { font-size: 11px; fill: var(--muted); font-variant-numeric: tabular-nums; }
+  .axis-title { font-size: 11px; fill: var(--muted); }
+  .ann-strong { font-size: 13px; font-weight: 650; fill: var(--ink); }
+  .tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12); padding: 8px 10px; font-size: 12px; min-width: 190px; color: var(--ink); z-index: 2; }
+  .tip .t-h { font-weight: 600; margin-bottom: 4px; }
+  .tip .row { display: flex; justify-content: space-between; gap: 12px; font-variant-numeric: tabular-nums; color: var(--ink-2); }
+  .tip .row span:first-child { display: inline-flex; align-items: center; gap: 6px; }
+  .tip .muted { color: var(--muted); margin-top: 4px; }
+  details { font-size: 13px; color: var(--ink-2); }
+  summary { cursor: pointer; color: var(--ink); }
+  .tablewrap { overflow-x: auto; margin-top: 12px; }
+  table { border-collapse: collapse; font-variant-numeric: tabular-nums; width: 100%; min-width: 560px; }
+  th, td { text-align: right; padding: 4px 8px; border-bottom: 1px solid var(--grid); }
+  th:first-child, td:first-child { text-align: left; }
+  th { font-weight: 600; color: var(--ink); }
+  .note { font-size: 13px; color: var(--muted); max-width: 72ch; margin: 0; }
+  .note a { color: inherit; }
+  @media (max-width: 600px) { main { padding: 28px 16px 60px; } }
+</style>
+</head>
+<body>
+<script src="/header.js"></script>
+
+<main>
+  <h1>The U-curve of native trees: giants and saplings</h1>
+  <p class="dek">Toronto street trees by trunk diameter, split by where their species comes from. Invasives like Norway maples dominate in the middle, while our oldest trees are almost all native.</p>
+  <div class="legend" id="legend"></div>
+  <div class="chart" id="chart"></div>
+  <p class="note" id="note"></p>
+  <details>
+    <summary>Data table</summary>
+    <div class="tablewrap"><table id="tbl"></table></div>
+  </details>
+</main>
+
+<script>
+const D = {"total":688335,"measured":684989,"bins":[{"lo":0,"hi":5,"n":77620,"native":41080,"ena":7545,"introduced":22266,"invasive":4438,"unknown":2291,"top":[["Ginkgo",5088],["Red oak",4638],["Kentucky coffeetree",4228]]},{"lo":5,"hi":10,"n":167572,"native":88023,"ena":23081,"introduced":38813,"invasive":10601,"unknown":7054,"top":[["Honey locust",15667],["Kentucky coffeetree",14412],["Freeman maple",8536]]},{"lo":10,"hi":15,"n":65677,"native":24911,"ena":6531,"introduced":17926,"invasive":10187,"unknown":6122,"top":[["Honey locust",5536],["Norway maple",3742],["Japanese lilac",3521]]},{"lo":15,"hi":20,"n":46932,"native":15721,"ena":4272,"introduced":13514,"invasive":9453,"unknown":3972,"top":[["Norway maple",4997],["Honey locust",3737],["Japanese lilac",2389]]},{"lo":20,"hi":25,"n":48236,"native":13603,"ena":4356,"introduced":14682,"invasive":11432,"unknown":4163,"top":[["Norway maple",8038],["Honey locust",3888],["Colorado blue spruce",2649]]},{"lo":25,"hi":30,"n":44425,"native":10803,"ena":4212,"introduced":13720,"invasive":12402,"unknown":3288,"top":[["Norway maple",10045],["Honey locust",3875],["Colorado blue spruce",2927]]},{"lo":30,"hi":35,"n":46533,"native":9932,"ena":4639,"introduced":14357,"invasive":14209,"unknown":3396,"top":[["Norway maple",12348],["Honey locust",4386],["Colorado blue spruce",3417]]},{"lo":35,"hi":40,"n":37637,"native":6951,"ena":4451,"introduced":11447,"invasive":12533,"unknown":2255,"top":[["Norway maple",11313],["Honey locust",4244],["Colorado blue spruce",2790]]},{"lo":40,"hi":45,"n":34331,"native":6291,"ena":4432,"introduced":9787,"invasive":11613,"unknown":2208,"top":[["Norway maple",10487],["Honey locust",4269],["Colorado blue spruce",2389]]},{"lo":45,"hi":50,"n":25537,"native":4393,"ena":3497,"introduced":7181,"invasive":8914,"unknown":1552,"top":[["Norway maple",8041],["Honey locust",3347],["Littleleaf linden",2228]]},{"lo":50,"hi":55,"n":21377,"native":4052,"ena":2755,"introduced":5527,"invasive":7557,"unknown":1486,"top":[["Norway maple",6762],["Honey locust",2633],["Littleleaf linden",2071]]},{"lo":55,"hi":60,"n":14506,"native":2800,"ena":1787,"introduced":3498,"invasive":5491,"unknown":930,"top":[["Norway maple",4892],["Honey locust",1672],["Littleleaf linden",1643]]},{"lo":60,"hi":65,"n":13069,"native":3165,"ena":1204,"introduced":2816,"invasive":4922,"unknown":962,"top":[["Norway maple",4293],["Littleleaf linden",1513],["Honey locust",1076]]},{"lo":65,"hi":70,"n":9069,"native":2510,"ena":654,"introduced":1839,"invasive":3420,"unknown":646,"top":[["Norway maple",2938],["Littleleaf linden",1100],["Silver maple",926]]},{"lo":70,"hi":75,"n":7623,"native":2518,"ena":428,"introduced":1364,"invasive":2801,"unknown":512,"top":[["Norway maple",2388],["Silver maple",1033],["Littleleaf linden",804]]},{"lo":75,"hi":80,"n":5486,"native":2116,"ena":228,"introduced":865,"invasive":1938,"unknown":339,"top":[["Norway maple",1639],["Silver maple",1007],["Littleleaf linden",533]]},{"lo":80,"hi":85,"n":4798,"native":2154,"ena":170,"introduced":659,"invasive":1516,"unknown":299,"top":[["Norway maple",1239],["Silver maple",1075],["Littleleaf linden",365]]},{"lo":85,"hi":90,"n":3156,"native":1600,"ena":82,"introduced":417,"invasive":890,"unknown":167,"top":[["Silver maple",850],["Norway maple",726],["Littleleaf linden",231]]},{"lo":90,"hi":95,"n":3007,"native":1687,"ena":82,"introduced":398,"invasive":666,"unknown":174,"top":[["Silver maple",930],["Norway maple",509],["Red oak",241]]},{"lo":95,"hi":100,"n":1938,"native":1242,"ena":50,"introduced":201,"invasive":361,"unknown":84,"top":[["Silver maple",770],["Norway maple",252],["Red oak",153]]},{"lo":100,"hi":110,"n":2825,"native":1921,"ena":67,"introduced":313,"invasive":366,"unknown":158,"top":[["Silver maple",1189],["Red oak",262],["Norway maple",239]]},{"lo":110,"hi":120,"n":1543,"native":1166,"ena":19,"introduced":142,"invasive":139,"unknown":77,"top":[["Silver maple",786],["Red oak",157],["Norway maple",70]]},{"lo":120,"hi":130,"n":989,"native":727,"ena":17,"introduced":121,"invasive":72,"unknown":52,"top":[["Silver maple",501],["Red oak",84],["Weeping willow",35]]},{"lo":130,"hi":null,"n":1103,"native":790,"ena":23,"introduced":142,"invasive":61,"unknown":87,"top":[["Silver maple",518],["Red oak",97],["Weeping willow",63]]}],"bands":[{"name":"young","lo":1,"hi":10,"n":245192,"native":129103,"ena":30626,"introduced":61079,"invasive":15039,"unknown":9345,"top":[["Honey locust","ena",19796],["Kentucky coffeetree","native",18640],["Ginkgo","introduced",13476],["Freeman maple","native",12741],["Red oak","native",12259],["Hackberry","native",10714]]},{"name":"mid","lo":30,"hi":60,"n":179921,"native":34419,"ena":21561,"introduced":51797,"invasive":60317,"unknown":11827,"top":[["Norway maple","invasive",53843],["Honey locust","ena",20551],["Littleleaf linden","introduced",12388],["Colorado blue spruce","introduced",11880],["Sargents apple","introduced",7619],["Austrian pine","introduced",6979]]},{"name":"old","lo":90,"hi":1000,"n":11405,"native":7533,"ena":258,"introduced":1317,"invasive":1665,"unknown":632,"top":[["Silver maple","native",4694],["Norway maple","invasive",1121],["Red oak","native",994],["Littleleaf linden","introduced",429],["White oak","native",369],["Siberian elm","invasive",333]]}]};
+const CLS = [
+  { k: "invasive", label: "Introduced & invasive", v: "--invasive" },
+  { k: "introduced", label: "Introduced", v: "--introduced" },
+  { k: "ena", label: "Native to eastern N. America", v: "--ena" },
+  { k: "native", label: "Native to Ontario", v: "--native" },
+];
+// Stacked bottom to top. Trees not identified to species are left out of the total: their
+// share holds at 3-9% across every size, so they add a band without adding to the story.
+const STACK = [...CLS].reverse();
+const fmt = new Intl.NumberFormat("en-CA");
+const pct = (x) => Math.round(x * 100) + "%";
+const NS = "http://www.w3.org/2000/svg";
+function el(tag, attrs, parent, text) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (text != null) e.textContent = text;
+  if (parent) parent.appendChild(e);
+  return e;
+}
+const XMAX = 140;
+const bins = D.bins.map((b) => {
+  const hi = b.hi ?? b.lo + 10;
+  return { ...b, hi, mid: (b.lo + hi) / 2, label: b.hi == null ? `${b.lo}+ cm` : `${b.lo}–${b.hi} cm` };
+});
+const known = (b) => b.n - b.unknown;
+const share = (b, k) => b[k] / known(b);
+
+const W = 760, H = 380, m = { l: 40, r: 20, t: 34, b: 34 };
+const x = (v) => m.l + (v / XMAX) * (W - m.l - m.r);
+const y = (p) => m.t + (1 - p) * (H - m.t - m.b);
+const host = document.getElementById("chart");
+document.getElementById("legend").innerHTML =
+  CLS.map((c) => `<span><i class="sw" style="background:var(${c.v})"></i>${c.label}</span>`).join("");
+const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Stacked area chart of street tree origin by trunk diameter. Native trees are 55% of trees 5 to 10 cm across, 18% at 45 to 50 cm, and 80% at 110 to 120 cm. Invasive trees, mostly Norway maple, are 7%, 37% and 9% at the same sizes." }, host);
+
+// Edges run from the first bin's left edge to the last bin's right edge, flat within the end bins.
+const xs = [0, ...bins.map((b) => b.mid), XMAX];
+const shares = bins.map((b) => STACK.map((c) => share(b, c.k)));
+const rows = [shares[0], ...shares, shares.at(-1)];
+let lower = xs.map(() => 0);
+const bands = [];
+STACK.forEach((c, ci) => {
+  const upper = lower.map((v, i) => v + rows[i][ci]);
+  const top = xs.map((v, i) => `${x(v)},${y(upper[i])}`);
+  const bot = xs.map((v, i) => `${x(v)},${y(lower[i])}`).reverse();
+  el("path", { d: `M${top.join("L")}L${bot.join("L")}Z`, fill: `var(${c.v})`, stroke: "var(--page)", "stroke-width": 1.5, "stroke-linejoin": "round" }, svg);
+  bands.push({ c, lower, upper });
+  lower = upper;
+});
+[0, 0.25, 0.5, 0.75, 1].forEach((p) => el("text", { x: m.l - 8, y: y(p) + 4, "text-anchor": "end", class: "tick" }, svg, Math.round(p * 100) + "%"));
+[0, 20, 40, 60, 80, 100, 120].forEach((v) => el("text", { x: x(v), y: H - m.b + 16, "text-anchor": "middle", class: "tick" }, svg, v));
+el("text", { x: x(135), y: H - m.b + 16, "text-anchor": "middle", class: "tick" }, svg, "130+");
+el("text", { x: W - m.r, y: H - 2, "text-anchor": "end", class: "axis-title" }, svg, "Trunk diameter at breast height (cm)");
+
+// Read the chart at three fixed diameters: saplings, the dip, giants. Each gets a hairline, a size
+// label above the plot, and the same two chips, so every percentage is measured somewhere visible.
+const READS = [5, 45, 110].map((lo) => bins.find((b) => b.lo === lo));
+READS.forEach((b) => {
+  const i = xs.indexOf(b.mid), cx = x(b.mid);
+  el("line", { x1: cx, x2: cx, y1: m.t - 6, y2: H - m.b, stroke: "var(--ink)", "stroke-width": 1, opacity: 0.55 }, svg);
+  el("text", { x: cx, y: m.t - 12, "text-anchor": "middle", class: "ann-strong" }, svg, b.label);
+  ["native", "invasive"].forEach((k) => {
+    const band = bands[STACK.findIndex((c) => c.k === k)];
+    const g = el("g", {}, svg);
+    const t = el("text", { x: cx, y: 0, "text-anchor": "middle", class: "ann-strong" }, g,
+      `${k === "native" ? "Native" : "Invasive"} ${pct(share(b, k))}`);
+    let bb = t.getBBox();
+    // Keep the chip inside the plot; the 5-10 cm read sits near the left edge.
+    const dx = Math.max(0, m.l + 4 - (bb.x - 6)) - Math.max(0, bb.x + bb.width + 6 - (W - m.r - 4));
+    if (dx) { t.setAttribute("x", cx + dx); bb = t.getBBox(); }
+    const hh = bb.height + 4;
+    // Centre in the band, but keep the chip inside the plot when the band is thin.
+    let cy = y((band.lower[i] + band.upper[i]) / 2);
+    cy = Math.min(Math.max(cy, m.t + hh / 2 + 2), H - m.b - hh / 2 - 2);
+    t.setAttribute("y", cy + 4);
+    g.insertBefore(el("rect", { x: bb.x - 6, y: cy - hh / 2, width: bb.width + 12, height: hh, rx: 4, fill: "var(--surface)", stroke: `var(${band.c.v})`, "stroke-width": 1.5 }), t);
+  });
+});
+
+// Hover layer: nearest bin by x, a hairline, and a tooltip. Arrow keys step through bins.
+(function () {
+  const tip = document.createElement("div");
+  tip.className = "tip"; tip.hidden = true; host.appendChild(tip);
+  const line = el("line", { y1: m.t, y2: H - m.b, stroke: "var(--ink-2)", "stroke-width": 1, opacity: 0, "pointer-events": "none" }, svg);
+  const hit = el("rect", { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, fill: "transparent", tabindex: 0 }, svg);
+  let cur = -1;
+  function show(i) {
+    cur = i;
+    const b = bins[i];
+    line.setAttribute("x1", x(b.mid)); line.setAttribute("x2", x(b.mid)); line.setAttribute("opacity", 0.5);
+    tip.innerHTML = `<div class="t-h">${b.label} · ${fmt.format(known(b))} trees</div>` +
+      CLS.map((c) => `<div class="row"><span><i class="sw" style="background:var(${c.v})"></i>${c.label}</span><span>${pct(share(b, c.k))}</span></div>`).join("") +
+      `<div class="muted">Most common</div>` +
+      b.top.map(([s, n]) => `<div class="row"><span>${s}</span><span>${pct(n / b.n)}</span></div>`).join("");
+    tip.hidden = false;
+    const r = svg.getBoundingClientRect(), s = r.width / W;
+    let left = x(b.mid) * s + 12;
+    if (left + tip.offsetWidth > r.width) left = x(b.mid) * s - tip.offsetWidth - 12;
+    tip.style.left = Math.max(0, left) + "px"; tip.style.top = m.t * s + "px";
+  }
+  function hide() { tip.hidden = true; line.setAttribute("opacity", 0); cur = -1; }
+  function nearest(evt) {
+    const r = svg.getBoundingClientRect(), px = (evt.clientX - r.left) * (W / r.width);
+    let best = 0;
+    bins.forEach((b, i) => { if (Math.abs(x(b.mid) - px) < Math.abs(x(bins[best].mid) - px)) best = i; });
+    return best;
+  }
+  hit.addEventListener("pointermove", (e) => show(nearest(e)));
+  hit.addEventListener("pointerleave", hide);
+  hit.addEventListener("blur", hide);
+  hit.addEventListener("focus", () => show(0));
+  hit.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowRight") show(Math.min(bins.length - 1, cur + 1));
+    else if (e.key === "ArrowLeft") show(Math.max(0, cur - 1));
+    else return;
+    e.preventDefault();
+  });
+})();
+
+document.getElementById("tbl").innerHTML =
+  `<thead><tr><th>Diameter</th><th>Trees</th>${STACK.map((c) => `<th>${c.label}</th>`).join("")}</tr></thead><tbody>` +
+  bins.map((b) => `<tr><td>${b.label}</td><td>${fmt.format(known(b))}</td>${STACK.map((c) => `<td>${(share(b, c.k) * 100).toFixed(1)}%</td>`).join("")}</tr>`).join("") +
+  "</tbody>";
+
+const unknown = bins.reduce((a, b) => a + b.unknown, 0);
+document.getElementById("note").innerHTML =
+  `City of Toronto <a href="https://open.toronto.ca/dataset/street-tree-data/">Street Tree Data</a>: ` +
+  `${fmt.format(D.measured - unknown)} trees on the road allowance with a recorded diameter and a species. ` +
+  `Trees not identified to species (${fmt.format(unknown)}) are left out. "Native" means native to Ontario, using the ` +
+  `species list from the <a href="/to-tree-map/">Toronto Street Tree Map</a>. Trunk size only roughly tracks age, ` +
+  `since species grow at very different rates.`;
+</script>
+</body>
+</html>
